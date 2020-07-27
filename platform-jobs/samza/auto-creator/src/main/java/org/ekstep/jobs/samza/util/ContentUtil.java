@@ -175,13 +175,8 @@ public class ContentUtil {
 			}});
 		}};
 		LOGGER.info("ContentUtil :: create :: create request : "+request);
-		String key = Platform.config.hasPath("dialcode.api.authorization")
-				? Platform.config.getString("dialcode.api.authorization")
-				: "";
-		LOGGER.info(key);
 		Map<String, String> header = new HashMap<String, String>() {{
 			put("X-Channel-Id", channelId);
-			put("Authorization", "Bearer " + key);
 			put("Content-Type", DEFAULT_CONTENT_TYPE);
 		}};
 		Response resp = UnirestUtil.post(url, request, header);
