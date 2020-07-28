@@ -112,7 +112,7 @@ public class MVCProcessorIndexer extends AbstractESIndexer {
 		}
 
 		// Connect to cassandra
-		String serverIP = "127.0.0.1";
+		String serverIP = Platform.config.hasPath("cassandra.lp.connection") ? Platform.config.getString("cassandra.lp.connection") : null;
 		String keyspace = "sunbirddev_content_store";
 		Cluster cluster = Cluster.builder()
 				.addContactPoints(serverIP)
