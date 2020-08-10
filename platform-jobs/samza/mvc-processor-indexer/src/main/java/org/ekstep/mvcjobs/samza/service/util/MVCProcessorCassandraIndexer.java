@@ -77,7 +77,7 @@ public class MVCProcessorCassandraIndexer  {
             LOGGER.info("MVCProcessorCassandraIndexer :: getContentMetaData ::: retrieved content meta " + content);
             Map<String,Object> obj = mapper.readValue(content,Map.class);
             Map<String,Object> contentobj = (HashMap<String,Object>) (((HashMap<String,Object>)obj.get("result")).get("content"));
-            LOGGER.info("MVCProcessorCassandraIndexer :: getContentMetaData ::: extracting required fields");
+            LOGGER.info("MVCProcessorCassandraIndexer :: getContentMetaData ::: extracting required fields" + contentobj);
             extractFieldsToBeInserted(contentobj);
             LOGGER.info("MVCProcessorCassandraIndexer :: getContentMetaData ::: making ml workbench api request");
             makepostreqForMlAPI(contentobj);
