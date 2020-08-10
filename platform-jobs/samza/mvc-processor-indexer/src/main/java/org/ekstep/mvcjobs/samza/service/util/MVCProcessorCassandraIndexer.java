@@ -33,7 +33,6 @@ public class MVCProcessorCassandraIndexer  {
                 obj = getContentMetaData(obj ,identifier);
                 LOGGER.info("MVCProcessorCassandraIndexer :: insertintoCassandra ::: Inserting into cassandra stage-1");
                 CassandraConnector.updateContentProperties(identifier,mapStage1);
-                mapStage1 = null;
             } else if(action.equalsIgnoreCase("update-ml-keywords")) {
                 LOGGER.info("MVCProcessorCassandraIndexer :: insertintoCassandra ::: update-ml-keywords");
                  String ml_contentText;
@@ -92,14 +91,17 @@ public class MVCProcessorCassandraIndexer  {
     //Getting Fields to be inserted into cassandra
     private void extractFieldsToBeInserted(Map<String,Object> contentobj) {
         if(contentobj.containsKey("level1Concept")){
+            LOGGER.info("Extracting Fields ::: level 1 concept");
             level1concept = (List<String>)contentobj.get("level1Name");
             mapStage1.put("level1_concept", level1concept);
         }
         if(contentobj.containsKey("level2Concept")){
+            LOGGER.info("Extracting Fields ::: level 2 concept");
             level2concept = (List<String>)contentobj.get("level1Name");
             mapStage1.put("level2_concept", level2concept);
         }
         if(contentobj.containsKey("level3Concept")){
+            LOGGER.info("Extracting Fields ::: level 3 concept");
             level3concept = (List<String>)contentobj.get("level1Name");
             mapStage1.put("level3_concept",level3concept );
         }
