@@ -54,7 +54,7 @@ public class MVCProcessorService implements ISamzaService {
 			LOGGER.debug("Indexing event into ES");
 			try {
 				processMessage(message);
-				LOGGER.debug("Composite record added/updated");
+				LOGGER.debug("MVC record added/updated");
 				metrics.incSuccessCounter();
 			} catch (PlatformException ex) {
 				LOGGER.error("Error while processing message:", message, ex);
@@ -79,23 +79,17 @@ public class MVCProcessorService implements ISamzaService {
 	public void processMessage(Map<String, Object> message) throws Exception {
 		if (message != null && message.get("eventData") != null) {
 			Map<String, Object> eventData = (Map<String, Object>) message.get("eventData");
-			String nodeType =  eventData.get("nodeType") != null ? (String) eventData.get("nodeType") : CompositeSearchConstants.NODE_TYPE_DATA;
 			String uniqueId = (String) ((Map<String, Object>) message.get("object")).get("id");
-			switch (nodeType) {
-				case CompositeSearchConstants.NODE_TYPE_SET:
-				case CompositeSearchConstants.NODE_TYPE_DATA: {
-					String action = eventData.get("action").toString();
-					if(action.equalsIgnoreCase("update-es-index")) {
-						eventData = GetContentMeta.getContentMetaData(eventData,uniqueId);
-					}
-					LOGGER.info("MVCProcessorService :: processMessage  ::: CAlling cassandra insertion ");
-					cassandraManager.insertintoCassandra(eventData,uniqueId);
-					LOGGER.info("MVCProcessorService :: processMessage  ::: CAlling elasticsearch insertion ");
-					mvcIndexer.upsertDocument(uniqueId,eventData);
-					break;
+			String action = eventData.get("action").toString();
+			if(!action.equalsIgnoreCase("update-content-rating")) {
+				if (action.equalsIgnoreCase("update-es-index")) {
+					eventData = GetContentMeta.getContentMetaData(eventData, uniqueId);
 				}
-				default: break;
+				LOGGER.info("MVCProcessorService :: processMessage  ::: CAlling cassandra insertion ");
+				cassandraManager.insertintoCassandra(eventData, uniqueId);
 			}
+			LOGGER.info("MVCProcessorService :: processMessage  ::: CAlling elasticsearch insertion ");
+			mvcIndexer.upsertDocument(uniqueId, eventData);
 		}
 	}
 

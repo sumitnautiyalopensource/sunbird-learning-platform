@@ -64,6 +64,20 @@ public class MVCProcessorESIndexer extends AbstractESIndexer {
 							uniqueId, jsonindexasString);
 				});
 				break;
+			case "update-content-rating" :
+				String resp = ElasticSearchUtil.getDocumentAsStringById(CompositeSearchConstants.MVC_SEARCH_INDEX,
+						uniqueId);
+				if (resp.contains(uniqueId)) {
+					Map<String, Object> metadata = (Map<String, Object>) jsonIndexDocument.get("metadata");
+					String finalJsonindexasString = mapper.writeValueAsString(metadata);
+					CompletableFuture.runAsync(() -> {
+						ElasticSearchUtil.updateDocument(CompositeSearchConstants.MVC_SEARCH_INDEX,
+								uniqueId, finalJsonindexasString);
+
+					});
+				}
+
+				break;
 			case "update-ml-contenttextvector" :
 				List<List<Double>> ml_contentTextVectorList;
 				Set<Double> ml_contentTextVector = null;
