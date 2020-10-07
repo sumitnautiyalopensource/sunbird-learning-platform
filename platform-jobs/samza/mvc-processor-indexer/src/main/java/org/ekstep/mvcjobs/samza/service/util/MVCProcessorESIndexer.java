@@ -13,7 +13,6 @@ import org.ekstep.searchindex.util.CompositeSearchConstants;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 
 
 /**
@@ -54,27 +53,21 @@ public class MVCProcessorESIndexer extends AbstractESIndexer {
 
 		String action = jsonIndexDocument.get("action").toString();
 		jsonIndexDocument = removeExtraParams(jsonIndexDocument);
-		String jsonindexasString = mapper.writeValueAsString(jsonIndexDocument);
-		String jsonindexasString2 = "";
+		String jsonAsString = mapper.writeValueAsString(jsonIndexDocument);
 		switch (action) {
-			case "update-es-index" :
+			case "update-es-index":
 				// Insert a new doc
-				CompletableFuture.runAsync( () -> {
-					ElasticSearchUtil.addDocumentWithId(CompositeSearchConstants.MVC_SEARCH_INDEX,
-							uniqueId, jsonindexasString);
-				});
+				ElasticSearchUtil.addDocumentWithId(CompositeSearchConstants.MVC_SEARCH_INDEX,
+						uniqueId, jsonAsString);
 				break;
 			case "update-content-rating" :
 				String resp = ElasticSearchUtil.getDocumentAsStringById(CompositeSearchConstants.MVC_SEARCH_INDEX,
 						uniqueId);
 				if (resp.contains(uniqueId)) {
 					Map<String, Object> metadata = (Map<String, Object>) jsonIndexDocument.get("metadata");
-					String finalJsonindexasString = mapper.writeValueAsString(metadata);
-					CompletableFuture.runAsync(() -> {
+					jsonAsString = mapper.writeValueAsString(metadata);
 						ElasticSearchUtil.updateDocument(CompositeSearchConstants.MVC_SEARCH_INDEX,
-								uniqueId, finalJsonindexasString);
-
-					});
+								uniqueId, jsonAsString);
 				}
 
 				break;
@@ -82,21 +75,18 @@ public class MVCProcessorESIndexer extends AbstractESIndexer {
 				List<List<Double>> ml_contentTextVectorList;
 				Set<Double> ml_contentTextVector = null;
 				ml_contentTextVectorList = jsonIndexDocument.get("ml_contentTextVector") != null ? (List<List<Double>>) jsonIndexDocument.get("ml_contentTextVector") : null;
-				if(ml_contentTextVectorList != null)
-				{
+				if (ml_contentTextVectorList != null) {
 					ml_contentTextVector = new HashSet<Double>(ml_contentTextVectorList.get(0));
 
 				}
-				jsonIndexDocument.put("ml_contentTextVector",ml_contentTextVector);
-				jsonindexasString2 = mapper.writeValueAsString(jsonIndexDocument);
-			case "update-ml-keywords" :
+				jsonIndexDocument.put("ml_contentTextVector", ml_contentTextVector);
+				jsonAsString = mapper.writeValueAsString(jsonIndexDocument);
+			case "update-ml-keywords":
 				// Update a doc
-				String finalJsonindexasString = jsonindexasString2 != "" ? jsonindexasString2 : jsonindexasString;
-				CompletableFuture.runAsync( () -> {
-					ElasticSearchUtil.updateDocument(CompositeSearchConstants.MVC_SEARCH_INDEX,
-							uniqueId, finalJsonindexasString);
-				});
-			break;
+				ElasticSearchUtil.updateDocument(CompositeSearchConstants.MVC_SEARCH_INDEX,
+						uniqueId, jsonAsString);
+
+				break;
 			default:
 		}
 

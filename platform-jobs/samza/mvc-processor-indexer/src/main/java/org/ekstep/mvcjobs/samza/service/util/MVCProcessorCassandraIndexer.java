@@ -1,6 +1,5 @@
 package org.ekstep.mvcjobs.samza.service.util;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.ekstep.common.Platform;
 import org.ekstep.jobs.samza.util.JobLogger;
@@ -12,8 +11,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 public class MVCProcessorCassandraIndexer  {
-    String elasticSearchParamArr[] = {"organisation","channel","framework","board","medium","subject","gradeLevel","name","description","language","appId","appIcon","appIconLabel","contentEncoding","identifier","node_id","nodeType","mimeType","resourceType","contentType","allowedContentTypes","objectType","posterImage","artifactUrl","launchUrl","previewUrl","streamingUrl","downloadUrl","status","pkgVersion","source","lastUpdatedOn","ml_contentText","ml_contentTextVector","ml_Keywords","level1Name","level1Concept","level2Name","level2Concept","level3Name","level3Concept","textbook_name","sourceURL","label","all_fields"};;
-    String contentreadapiurl = "", mlworkbenchapirequest = "", mlvectorListRequest = "" , jobname = ""   ;
+    String  mlworkbenchapirequest = "", mlvectorListRequest = "" , jobname = ""   ;
     Map<String,Object> mapStage1 = new HashMap<>();
     List<String> level1concept = null,level2concept  = null, level3concept = null , textbook_name , level1_name , level2_name , level3_name ;
     private JobLogger LOGGER = new JobLogger(MVCProcessorCassandraIndexer.class);
@@ -24,7 +22,7 @@ public class MVCProcessorCassandraIndexer  {
 
     }
     // Insert to cassandra
-    public  void insertintoCassandra(Map<String,Object> obj, String identifier) throws Exception {
+    public  void insertIntoCassandra(Map<String,Object> obj, String identifier) throws Exception {
         String action = obj.get("action").toString();
 
         if(StringUtils.isNotBlank(action)) {
@@ -32,29 +30,26 @@ public class MVCProcessorCassandraIndexer  {
                 LOGGER.info("MVCProcessorCassandraIndexer :: getContentMetaData ::: extracting required fields" + obj);
                 extractFieldsToBeInserted(obj);
                 LOGGER.info("MVCProcessorCassandraIndexer :: getContentMetaData ::: making ml workbench api request");
-                makepostreqForMlAPI(obj);
-                LOGGER.info("MVCProcessorCassandraIndexer :: insertintoCassandra ::: update-es-index-1 event");
-                LOGGER.info("MVCProcessorCassandraIndexer :: insertintoCassandra ::: Inserting into cassandra stage-1");
-                CompletableFuture.runAsync( () -> {
-                    CassandraConnector.updateContentProperties(identifier,mapStage1);
-                });
+                getMLKeywords(obj);
+                LOGGER.info("MVCProcessorCassandraIndexer :: insertIntoCassandra ::: update-es-index-1 event");
+                LOGGER.info("MVCProcessorCassandraIndexer :: insertIntoCassandra ::: Inserting into cassandra stage-1");
+                CassandraConnector.updateContentProperties(identifier,mapStage1);
             } else if(action.equalsIgnoreCase("update-ml-keywords")) {
-                LOGGER.info("MVCProcessorCassandraIndexer :: insertintoCassandra ::: update-ml-keywords");
+                LOGGER.info("MVCProcessorCassandraIndexer :: insertIntoCassandra ::: update-ml-keywords");
                  String ml_contentText;
                  List<String> ml_Keywords;
                  ml_contentText = obj.get("ml_contentText") != null ? obj.get("ml_contentText").toString() : null;
                  ml_Keywords = obj.get("ml_Keywords") != null ? (List<String>) obj.get("ml_Keywords") : null;
 
-                makepostreqForVectorApi(ml_contentText,identifier);
+                getMLVectors(ml_contentText,identifier);
                 Map<String,Object> mapForStage2 = new HashMap<>();
                 mapForStage2.put("ml_keywords",ml_Keywords);
                 mapForStage2.put("ml_content_text",ml_contentText);
-                CompletableFuture.runAsync( () -> {
-                    CassandraConnector.updateContentProperties(identifier,mapForStage2);
-                });
+                CassandraConnector.updateContentProperties(identifier,mapForStage2);
+
             }
             else  if(action.equalsIgnoreCase("update-ml-contenttextvector")) {
-                LOGGER.info("MVCProcessorCassandraIndexer :: insertintoCassandra ::: update-ml-contenttextvector event");
+                LOGGER.info("MVCProcessorCassandraIndexer :: insertIntoCassandra ::: update-ml-contenttextvector event");
                  List<List<Double>> ml_contentTextVectorList;
                  Set<Double> ml_contentTextVector = null;
               ml_contentTextVectorList = obj.get("ml_contentTextVector") != null ? (List<List<Double>>) obj.get("ml_contentTextVector") : null;
@@ -65,9 +60,8 @@ public class MVCProcessorCassandraIndexer  {
                 }
                 Map<String,Object> mapForStage3 = new HashMap<>();
                 mapForStage3.put("ml_content_text_vector",ml_contentTextVector);
-                CompletableFuture.runAsync( () -> {
-                    CassandraConnector.updateContentProperties(identifier,mapForStage3);
-                });
+                CassandraConnector.updateContentProperties(identifier,mapForStage3);
+
 
             }
         }
@@ -114,41 +108,41 @@ public class MVCProcessorCassandraIndexer  {
     }
 
     // POST reqeuest for ml keywords api
-    void makepostreqForMlAPI(Map<String, Object> contentdef) throws Exception {
+    void getMLKeywords(Map<String, Object> contentdef) throws Exception {
         JSONObject obj = new JSONObject(mlworkbenchapirequest);
         JSONObject req = ((JSONObject) (obj.get("request")));
         JSONObject input = (JSONObject) req.get("input");
         JSONArray content = (JSONArray) input.get("content");
         content.put(contentdef);
         req.put("job", jobname);
-        LOGGER.info("MVCProcessorCassandraIndexer :: makepostreqForMlAPI  ::: The ML workbench URL is " + "http://" + Platform.config.getString("mlkeywordapi") + ":3579/daggit/submit");
+        LOGGER.info("MVCProcessorCassandraIndexer :: getMLKeywords  ::: The ML workbench URL is " + "http://" + Platform.config.getString("ml.keyword.api") + ":3579/daggit/submit");
 
         try {
-            String resp = HTTPUtil.makePostRequest("http://" + Platform.config.getString("mlkeywordapi") + ":3579/daggit/submit", obj.toString());
-            LOGGER.info("MVCProcessorCassandraIndexer :: makepostreqForMlAPI  ::: The ML workbench response is " + resp);
+            String resp = HTTPUtil.makePostRequest("http://" + Platform.config.getString("ml.keyword.api") + ":3579/daggit/submit", obj.toString());
+            LOGGER.info("MVCProcessorCassandraIndexer :: getMLKeywords  ::: The ML workbench response is " + resp);
 
         } catch (Exception e) {
-            LOGGER.info("MVCProcessorCassandraIndexer :: makepostreqForMlAPI  ::: ML workbench api request failed ");
+            LOGGER.info("MVCProcessorCassandraIndexer :: getMLKeywords  ::: ML workbench api request failed ");
         }
 
     }
 
 
     // Post reqeuest for vector api
-    public void makepostreqForVectorApi(String contentText, String identifier) throws Exception {
-        String mlvectorapi = Platform.config.hasPath("mlvectorapi") ? Platform.config.getString("mlvectorapi") : "";
+    public void getMLVectors(String contentText, String identifier) throws Exception {
+        String mlVectorApi = Platform.config.hasPath("ml.vector.api") ? Platform.config.getString("ml.vector.api") : "";
         JSONObject obj = new JSONObject(mlvectorListRequest);
         JSONObject req = ((JSONObject) (obj.get("request")));
         JSONArray text = (JSONArray) req.get("text");
         req.put("cid", identifier);
         text.put(contentText);
-        LOGGER.info("MVCProcessorCassandraIndexer :: makepostreqForVectorApi  ::: The ML vector URL is " + "http://" + mlvectorapi + ":1729/ml/vector/ContentText");
+        LOGGER.info("MVCProcessorCassandraIndexer :: getMLVectors  ::: The ML vector URL is " + "http://" + mlVectorApi + ":1729/ml/vector/ContentText");
 
         try {
-            String resp = HTTPUtil.makePostRequest("http://" + mlvectorapi + ":1729/ml/vector/ContentText", obj.toString());
-            LOGGER.info("MVCProcessorCassandraIndexer :: makepostreqForVectorApi  ::: ML vector api request response is " + resp);
+            String resp = HTTPUtil.makePostRequest("http://" + mlVectorApi + ":1729/ml/vector/ContentText", obj.toString());
+            LOGGER.info("MVCProcessorCassandraIndexer :: getMLVectors  ::: ML vector api request response is " + resp);
         } catch (Exception e) {
-            LOGGER.info("MVCProcessorCassandraIndexer :: makepostreqForVectorApi  ::: ML vector api request failed ");
+            LOGGER.info("MVCProcessorCassandraIndexer :: getMLVectors  ::: ML vector api request failed ");
         }
     }
 
