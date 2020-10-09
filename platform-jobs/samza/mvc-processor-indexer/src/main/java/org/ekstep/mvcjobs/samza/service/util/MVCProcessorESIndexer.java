@@ -60,18 +60,20 @@ public class MVCProcessorESIndexer extends AbstractESIndexer {
 				ElasticSearchUtil.addDocumentWithId(CompositeSearchConstants.MVC_SEARCH_INDEX,
 						uniqueId, jsonAsString);
 				break;
-			case "update-content-rating" :
+			case "update-content-rating" : {
+
 				String resp = ElasticSearchUtil.getDocumentAsStringById(CompositeSearchConstants.MVC_SEARCH_INDEX,
 						uniqueId);
 				if (resp.contains(uniqueId)) {
 					Map<String, Object> metadata = (Map<String, Object>) jsonIndexDocument.get("metadata");
 					jsonAsString = mapper.writeValueAsString(metadata);
-						ElasticSearchUtil.updateDocument(CompositeSearchConstants.MVC_SEARCH_INDEX,
-								uniqueId, jsonAsString);
+					ElasticSearchUtil.updateDocument(CompositeSearchConstants.MVC_SEARCH_INDEX,
+							uniqueId, jsonAsString);
 				}
 
 				break;
-			case "update-ml-contenttextvector" :
+			}
+			case "update-ml-contenttextvector" : {
 				List<List<Double>> ml_contentTextVectorList;
 				Set<Double> ml_contentTextVector = null;
 				ml_contentTextVectorList = jsonIndexDocument.get("ml_contentTextVector") != null ? (List<List<Double>>) jsonIndexDocument.get("ml_contentTextVector") : null;
@@ -81,6 +83,7 @@ public class MVCProcessorESIndexer extends AbstractESIndexer {
 				}
 				jsonIndexDocument.put("ml_contentTextVector", ml_contentTextVector);
 				jsonAsString = mapper.writeValueAsString(jsonIndexDocument);
+			}
 			case "update-ml-keywords":
 				// Update a doc
 				ElasticSearchUtil.updateDocument(CompositeSearchConstants.MVC_SEARCH_INDEX,
